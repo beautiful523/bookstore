@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}神奇谷书城-提交订单{% endblock title %}
+{% block topfiles %}{% endblock topfiles %}
+{% block body_part %}
+	<h3 class="common_title">确认收货地址</h3>
+	<div class="common_list_con clearfix">
+		<dl>
+			<dt>寄送到：</dt>
+			<!-- 视图里提供了默认收件信息数据 -->
+			<dd><input type="radio" name="recipient_id" value="{{ recipient.id }}" checked="">{{ recipient.recipient_address }} （{{ recipient.recipient_name }} 收） {{ recipient.recipient_phone }}</dd>
+		</dl>
+		<a href="{% url 'users:user_center_site' %}" class="edit_site">编辑收货地址</a>
+	</div>	
+	<h3 class="common_title">支付方式</h3>	
+	<div class="common_list_con clearfix">
+		<div class="pay_style_con clearfix">
+			<input type="radio" name="pay_style" checked value="1">
+			<label class="cash" >货到付款</label>
+			<input type="radio" name="pay_style" value="2">
+			<label class="weixin">微信支付</label>
+			<input type="radio" name="pay_style" value="3">
+			<label class="zhifubao" >支付宝</label>
+			<input type="radio" name="pay_style" value="4">
+			<label class="bank" >银行卡支付</label>
+		</div>
+	</div>
+
+	<h3 class="common_title">商品列表</h3>
+	
+	<div class="common_list_con clearfix">
+		<ul class="book_list_th clearfix">
+			<li class="col01">商品名称</li>
+			<li class="col02">商品单位</li>
+			<li class="col03">商品价格</li>
+			<li class="col04">数量</li>
+			<li class="col05">小计</li>		
+		</ul>
+        {% for book in books_li %}
+            <ul class="book_list_td clearfix">
+                <li class="col01">{{ book.id }}</li>
+                <li class="col02"><img src="{% static book.image %}"></li>
+                <li class="col03">{{ book.name }}</li>
+                <li class="col04">册</li>
+                <li class="col05">{{ book.price }}元</li>
+                <li class="col06">{{ book.count }}</li>
+                <li class="col07">{{ book.amount }}元</li>
+            </ul>
+        {% endfor %}
+	</div>
+
+	<h3 class="common_title">总金额结算</h3>
+
+	<div class="common_list_con clearfix">
+		<div class="settle_con">
+			<div class="total_book_count">共<em>{{ total_count }}</em>件商品，总金额<b>{{ total_price }}元</b></div>
+			<div class="transit">运费：<b>{{ transit_price }}元</b></div>
+			<div class="total_pay">实付款：<b>{{ total_pay }}元</b></div>
+		</div>
+	</div>
+
+	<div class="order_submit clearfix">
+        {# books_id 是这样的形式："1,2,3 "#}
+        {% csrf_token %}
+		<a href="javascript:;" id="order_btn" books_id="{{ books_id }}">提交订单</a>
+	</div>	
+{% endblock body_part %}
+
+
+{% block bottom %}
+	<div class="popup_con">
+		<div class="popup">
+			<p>订单提交成功！</p>
+		</div>
+		<div class="mask"></div>
+	</div>
+{% endblock bottom %}
+
+
+
+
+{% block bottomfiles %}
+<script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript">
+    $('#order_btn').click(function() {
+        // 获取收货地址的id, 支付方式，用户购买的商品id
+        recipient_id = $('input[name="recipient_id"]').val();
+        pay_method = $('input[name="pay_style"]:checked').val(); {# 货到付款 #}
+        books_id = $(this).attr('books_id'); {# books_id 是这样的形式：1,2,3 #}
+        csrf = $('input[name="csrfmiddlewaretoken"]').val();
+        // alert(addr_id+':'+pay_method+':'+books_ids)
+        // 发起post请求， 访问/order/commit/
+        params = {
+            'recipient_id': recipient_id,
+            'pay_method': pay_method,
+            'books_id': books_id,
+            'csrfmiddlewaretoken': csrf
+        };
+        //post请求
+        //参数：收货地址id, 付款方式，books_id
+        $.post('/order/order_commit/', params, function (data) {
+            // 根据json进行处理
+            if (data.res == 6){
+                //在浏览器存储的本地存储存这个值，F12可以查看到，项目没用上这个值
+                localStorage.setItem('order_finish',2);
+                $('.popup_con').fadeIn('fast', function() {
+                    setTimeout(function(){
+                        $('.popup_con').fadeOut('fast',function(){
+                            //window.location.href 直接改浏览器地址
+                            window.location.href = '{% url 'users:user_center_order' %}';
+                        });
+                    },3000)
+
+                });
+            }
+            else {
+                alert(data.err_msg)
+            }
+        })
+
+    });
+</script>
+{% endblock bottomfiles %}

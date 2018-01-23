@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}神奇谷书城-登录{% endblock title %}
+{% block topfiles %}
+{# 增加的一段jQuery #}
+<script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript">
+	//$(function(){});//执行一个匿名函数
+	$(function () {
+		//$('#btnLogin').click(  function(){}   ); //当点击id为btnLogin的元素后触发匿名函数function(){}
+		$("#btnLogin").click(function () {
+			// 获取用户名和密码
+			//$('input').val();//获取表单内容
+			var user_name = $("#user_name").val();
+			var password = $("#pwd").val();
+			//这个哪里来的csrfmiddlewaretoken
+			var csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
+			//prop() 方法设置或返回被选元素的属性和值
+			var remember = $('input[name="remember"]').prop('checked');
+			//准备请求数据
+			var params = {
+				'user_name': user_name, 'password': password,
+				'csrfmiddlewaretoken': csrfmiddlewaretoken, 'remember': remember
+			};
+			// 发起ajax请求,请求发送到login_check
+			// data就是返回数据
+			$.post('login_check', params, function (data) {
+				// 用户名密码错误 {'res': 0}
+				// 登录成功 {'res': 1}
+				if (data.res == 2) {
+					//next选择器(下一个同级节点)
+					$('#user_name').next().html(csrfmiddlewaretoken).show()
+				} else {
+					if (data.res == 0) {
+						$('#user_name').next().html('用户名或密码错误').show()
+					} else {
+						// 跳转页面
+{#                                            $('#user_name').next().html(csrfmiddlewaretoken).show();#}
+						location.href = data.next_url;// /user/
+					}
+				}
+			}
+			)
+		}//click后面的匿名函数结束
+		);
+	})
+</script>
+{% endblock topfiles %}
+{% block header_con %}{% endblock header_con %}
+{% block search_bar %}{% endblock search_bar %}
+{% block cart_count %}{% endblock cart_count %}
+{% block body_part %}
+	<div class="login_top clearfix">
+		<a href="index.html" class="login_logo"><img src="/static/images/logo.png" style="width: 160px; height: 53px;"></a>
+	</div>
+	<div class="login_form_bg">
+		<div class="login_form_wrap clearfix">
+			<div class="login_banner fl"></div>
+			<div class="slogan fl">计算机书 · 来神奇谷</div>
+			<div class="login_form fr">
+				<div class="login_title clearfix">
+					<h1>用户登录</h1>
+					<a href="{% url 'users:register' %}">立即注册</a>
+				</div>
+				<div class="form_input">
+					{# post请求时防止跨域攻击 #}
+					{% csrf_token %}
+					{# 每次默认增加下面一条input,value每次不一样，提交的时候要加入参数中 #}
+					{#<input name="csrfmiddlewaretoken" value="9dby5VUKnkruDtot4Sx516tFHG5ytSegXvDrqZlIspii3gna6paeCUpzIMSIZph8" type="hidden">#}
+					{# user_name还不知道是从哪里传过来的  checked也一样 #}
+					<input type="text" id="user_name" class="name_input" value="{{ user_name }}" placeholder="请输入用户名">
+					<div class="user_error">输入错误</div>
+					<input type="password" id="pwd" class="pass_input" placeholder="请输入密码">
+					<div class="pwd_error">输入错误</div>
+					<div class="more_input clearfix">
+						<input type="checkbox" name="remember" {{ checked }}>
+						<label>记住用户名</label>
+						<a href="#">忘记密码</a>
+					</div>
+					<input type="button" id="btnLogin" value="登录" class="input_submit">
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock body_part %}
+

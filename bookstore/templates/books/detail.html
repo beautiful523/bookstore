@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title %}神奇谷书店-详情页{% endblock title %}
+{% block topfiles %}
+<script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
+<script type="text/javascript">
+	$(function () {
+		// 显示总价的函数
+		function update_total_price() {
+			// 获取商品的价格和数量
+			book_price = $('.show_pirze').children('em').text(); //单价
+			book_count = $('.num_show').val(); //数量
+			// 计算商品的总价
+			book_price = parseFloat(book_price);
+			book_count = parseInt(book_count);
+			total_price = book_price * book_count;
+			// 设置商品总价
+			$('.total').children('em').text(total_price.toFixed(2) + '元')
+		}
+
+
+	// 商品增加
+	$('.add').click(function () {
+		// 获取商品的数量
+		book_count = $('.num_show').val();
+		// 加1
+		book_count = parseInt(book_count) + 1;
+		// 重新设置值
+		$('.num_show').val(book_count);
+		// 计算并显示总价
+		update_total_price()
+	});
+
+	// 商品减少
+	$('.minus').click(function () {
+		// 获取商品的数量
+		book_count = $('.num_show').val();
+		// 减1
+		book_count = parseInt(book_count) - 1;
+		if (book_count == 0){
+			book_count = 1
+		}
+		// 重新设置值
+		$('.num_show').val(book_count);
+		// 计算并显示总价
+		update_total_price()
+	});
+
+	// 手动输入
+	$('.num_show').blur(function () {
+		// 获取商品的数量
+		book_count = $(this).val();
+		// 数据校验
+		if (isNaN(book_count) || book_count.trim().length == 0 || parseInt(book_count) <= 0 ){
+			book_count = 1
+		}
+		// 重新设置值,parseInt:3.7--3
+		$('.num_show').val(parseInt(book_count));
+		// 计算并显示总价
+		update_total_price()
+	});
+
+
+	$('#detail').click(function (){
+		$(this).addClass('active');
+		$('#comment').removeClass('active');
+		$('#book_comment').hide();
+		$('#book_detail').show();
+	});
+
+	$('#comment').click(function () {
+			// 获取评论
+		$.ajax({
+			url: '/comments/comment/' + $('#comment-input').data('bookid'),
+			success: function (res) {
+				if (res.code === 200) {
+					$('#book_comment').empty()
+					var data = res.data;
+					var div_head = '<div>';
+					var div_tail = '</div>';
+					var dom_element = '';
+					for(i = 0; i < data.length; i++) {
+						var head = '<div>';
+						var tail = '</div>';
+						var temp = head + '<span>' + data[i].user_id + '</span>' + '<br>' + '<span>' + data[i].content + '</span>';
+						dom_element += temp;
+					}
+					dom_element = div_head + dom_element + div_tail;
+					$('#book_comment').append(dom_element);
+				}
+			}
+		});
+
+		$(this).addClass('active');
+		$('#detail').removeClass('active');
+		$('#book_comment').show();
+		$('#book_detail').hide();
+	});
+
+	$('#write-comment').click(function () {
+		$('#write-comment').hide()
+		$('#comment-input').show();
+		$('.r_wrap').hide()
+	});
+
+	$('#submit-comment').click(function () {
+
+		var book_id = $('#comment-input').data('bookid');
+		var user_id = $('#comment-input').data('userid');
+		var content = $('input[name="content"]').val();
+		var data = {
+			book_id: book_id,
+			user_id: user_id,
+			content: content,
+		};
+		$.ajax({
+			type: 'POST',
+			url: '/comments/comment/' + book_id + '/',
+			data: JSON.stringify(data),
+			success: function (res) {
+				if (res.code === 200) {
+					$('#comment-input').hide();
+					$('.r_wrap').show();
+					$('#detail').addClass('active');
+					$('#comment').removeClass('active');
+					$('#book_comment').hide();
+					$('#book_detail').show();
+					$('#write-comment').show()
+					alert(res.msg);
+				}
+			}
+		})
+	})
+	})
+</script>
+{% endblock topfiles %}
+{% block body_part %}
+	<div class="navbar_con">
+		<div class="navbar clearfix">
+			<div class="subnav_con fl">
+				<h1>全部商品分类</h1>	
+				<span></span>			
+				<ul class="subnav">
+					<li><a href="#" class="python">Python</a></li>
+					<li><a href="#" class="javascript">Javascript</a></li>
+					<li><a href="#" class="algorithms">数据结构与算法</a></li>
+					<li><a href="#" class="machinelearning">机器学习</a></li>
+					<li><a href="#" class="operatingsystem">操作系统</a></li>
+					<li><a href="#" class="database">数据库</a></li>
+				</ul>
+			</div>
+			<ul class="navlist fl">
+				<li><a href="">首页</a></li>
+				<li class="interval">|</li>
+				<li><a href="">移动端书城</a></li>
+				<li class="interval">|</li>
+				<li><a href="">秒杀</a></li>
+			</ul>
+		</div>
+	</div>
+	<div class="breadcrumb">
+		<a href="#">全部分类</a>
+		<span>></span>
+		<a href="#">Python</a>
+		<span>></span>
+		<a href="#">商品详情</a>
+	</div>
+	<div class="book_detail_con clearfix">
+		<div class="book_detail_pic fl"><img src="{% static books.image %}"></div>
+
+		<div class="book_detail_list fr">
+			<h3>{{ books.name }}</h3>
+			<p>{{ books.desc }}</p>
+			<div class="prize_bar">
+				<span class="show_pirze">¥<em>{{ books.price }}</em></span>
+				<span class="show_unit">单  位：册</span>
+			</div>
+			<div class="book_num clearfix">
+				<div class="num_name fl">数 量：{{ books.stock }}</div>
+				{#这是加入购物车的数量#}
+				<div class="num_add fl">
+					<input type="text" class="num_show fl" value="1">
+					<a href="javascript:;" class="add fr">+</a>
+					<a href="javascript:;" class="minus fr">-</a>	
+				</div> 
+			</div>
+			<div class="total">总价：<em>{{ books.price }}</em></div>
+			<div class="operate_btn">
+				{% csrf_token %}
+				<a href="javascript:;" class="buy_btn">立即购买</a>
+				<a href="javascript:;" book_id="{{ books.id }}" class="add_cart" id="add_cart">加入购物车</a>
+				<a href="javascript:;" id="write-comment" class="comment add_cart">我要写评论</a>
+				<div style="display:none;" id="comment-input" data-bookid="{{ books.id }}" data-userid="{{ request.session.passport_id }}">
+				<div>
+					<input type="text" name="content" placeholder="评论内容">
+				</div>
+				<div id="submit-comment">
+					<button>
+					  提交评论
+					</button>
+				</div>
+			</div>
+		</div>
+
+			
+	</div>
+	<div class="main_wrap clearfix">
+		<div class="l_wrap fl clearfix">
+			<div class="new_book">
+				<h3>新品推荐</h3>
+				<ul>
+					{% for book in books_list %}
+
+						<li>
+							<a href="#"><img src="{% static book.image %}"></a>
+							<h4><a href="{% url 'books:detail' books_id=book.id %}">{{ book.name }}</a></h4>
+							<div class="prize">￥{{ book.price }}</div>
+						</li>
+				   {% endfor %}
+				</ul>
+			</div>
+		</div>
+
+		<div class="r_wrap fr clearfix">
+			<ul class="detail_tab clearfix">
+				<li class="active" id="detail">商品介绍</li>
+				<li id="comment">评论</li>
+			</ul>
+
+			<div class="tab_content">
+				<dl id="book_detail">
+					<dt>商品详情：</dt>
+					{# 因为字符默认会被转义，比如<p>会转义成&lt;p&gt,然后在前端就显示成大于小于号#}
+					{#而我们需要它作为标签用所以用safe过滤器，以避免转义，用它的功能 #}
+					<dd>{{ books.detail|safe}}</dd>
+				</dl>
+				<dl id="book_comment">
+				
+				</dl>
+			</div>
+
+		</div>
+	</div>
+	{# 这是那个飞走的动画圆点 #}
+	<div class="add_jump"></div>
+{% endblock body_part %}
+{% block bottomfiles %}
+	<script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript">
+		{# 点击立即购买按钮 #}
+		$('#add_cart').click(function() {
+			{# 获取动画圆点起始位置：立即购买按钮--显示数量按钮 #}
+			var $add_x = $('#add_cart').offset().top;
+			var $add_y = $('#add_cart').offset().left;
+			var $to_x = $('#show_count').offset().top;
+			var $to_y = $('#show_count').offset().left;
+			// 获取商品的id和商品数量和csrf，作为post的参数
+			book_id = $(this).attr('book_id');
+			book_count = $('.num_show').val();
+			csrf = $('input[name="csrfmiddlewaretoken"]').val();
+			params = {
+			'book_id': book_id,
+			'book_count': book_count,
+			'csrfmiddlewaretoken': csrf
+			};
+			// 发起post请求，访问/cart/cart_add/, 进行购物车数据的添加
+			$.post('/cart/cart_add/', params, function (data) {
+				if (data.res == 5) {
+					// 如果添加成功，展示动画
+					$(".add_jump").css({'left': $add_y + 80, 'top': $add_x + 10, 'display': 'block'});
+					$(".add_jump").stop().animate({
+							'left': $to_y + 7,
+							'top': $to_x + 7
+						},
+						"fast", function () {
+							$(".add_jump").fadeOut('fast', function () {
+								//动画结束之后
+								// 获取原有show_count的值
+								count = $('#show_count').html();
+								//加上添加数量
+								count = parseInt(count) + parseInt(book_count);
+								//将相加后结果显示到“显示数量按钮”
+								$('#show_count').html(count);
+							});
+						});
+					}
+					else {
+						// 如果添加失败，打印错误信息
+						alert(data.err_msg)
+					}
+				}
+			);
+		});
+</script>
+{% endblock bottomfiles %}
